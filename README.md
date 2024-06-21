@@ -1,4 +1,4 @@
-# protein-folding-using-Monte-Carlo-and-analyzing-the-structure
+protein folding using Monte-Carlo and analyzing the structure
 using Monte Carlo and analyzing the structure
 I wrote this code in a simpler form before, and this code is more complex. If it is not necessary, please use the previous code.
 
