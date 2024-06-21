@@ -1,0 +1,91 @@
+import mdtraj as md
+from Bio.PDB import PDBParser, PDBList
+import numpy as np
+import random
+from concurrent.futures import ThreadPoolExecutor
+
+# Download and read protein structure from PDB
+def download_pdb(pdb_id, save_path='pdb_files'):
+    pdbl = PDBList()
+    pdbl.retrieve_pdb_file(pdb_id, pdir=save_path, file_format='pdb')
+    return f"{save_path}/pdb{pdb_id}.ent"
+
+# Load protein structure
+def load_structure(file_path):
+    parser = PDBParser()
+    structure = parser.get_structure('protein', file_path)
+    return structure
+
+# Analyze protein structure with MDTraj
+def analyze_structure(file_path):
+    traj = md.load(file_path)
+    topology = traj.topology
+    return traj, topology
+
+# More complex energy function considering Lennard-Jones potential
+def energy(coords):
+    sigma = 3.4
+    epsilon = 0.238
+    dist = np.linalg.norm(coords[:, None, :] - coords[None, :, :], axis=2)
+    lj_potential = 4 * epsilon * ((sigma / dist)**12 - (sigma / dist)**6)
+    return np.sum(lj_potential[np.isfinite(lj_potential)])
+
+# Single Monte Carlo step
+def monte_carlo_step(coords, max_displacement=0.1, temperature=300):
+    k_B = 1.380649e-23  # Boltzmann constant
+    atom_index = random.randint(0, len(coords) - 1)
+    new_coords = coords.copy()
+    displacement = np.random.uniform(-max_displacement, max_displacement, size=3)
+    new_coords[atom_index] += displacement
+    current_energy = energy(coords)
+    new_energy = energy(new_coords)
+    delta_energy = new_energy - current_energy
+    if delta_energy < 0 or random.uniform(0, 1) < np.exp(-delta_energy / (k_B * temperature)):
+        return new_coords, new_energy
+    else:
+        return coords, current_energy
+
+# Monte Carlo folding simulation
+def monte_carlo_folding(structure, steps=1000, temperature=300):
+    atoms = list(structure.get_atoms())
+    coords = np.array([atom.coord for atom in atoms])
+    current_energy = energy(coords)
+    
+    for step in range(steps):
+        coords, current_energy = monte_carlo_step(coords, temperature=temperature)
+        if step % 100 == 0:
+            print(f"Step {step}, Energy: {current_energy}")
+
+    # Update atom coordinates
+    for i, atom in enumerate(atoms):
+        atom.coord = coords[i]
+
+    return structure
+
+# Parallel Monte Carlo folding simulation
+def parallel_monte_carlo_folding(structure, steps=1000, temperature=300, num_threads=4):
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        futures = [executor.submit(monte_carlo_folding, structure, steps, temperature) for _ in range(num_threads)]
+        results = [future.result() for future in futures]
+    return results
+
+# Download and load protein structure
+pdb_id = "1AKE"  # Example PDB ID
+file_path = download_pdb(pdb_id)
+structure = load_structure(file_path)
+
+# Analyze initial structure
+traj, topology = analyze_structure(file_path)
+
+# Run parallel Monte Carlo folding simulation
+folded_structures = parallel_monte_carlo_folding(structure, steps=1000, num_threads=4)
+
+# Save folded structures
+for i, folded_structure in enumerate(folded_structures):
+    output_file = f"folded_structure_{i}.pdb"
+    with open(output_file, "w") as f:
+        from Bio.PDB import PDBIO
+        io = PDBIO()
+        io.set_structure(folded_structure)
+        io.save(f)
+    print(f"Folded structure {i} saved to {output_file}")
