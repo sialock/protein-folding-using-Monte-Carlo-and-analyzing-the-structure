@@ -30,6 +30,8 @@ That project is also a **reference-based Cα teaching model**, not a de novo pro
 
 There is no dependency file or supported installation procedure because this archive is not maintained as runnable software.
 
+GitHub Actions performs a syntax check on the archived Python file. It does not test the energy model or validate the simulation.
+
 ## License
 
 No license has been added to this repository. Please contact the repository owner before reusing the code.
