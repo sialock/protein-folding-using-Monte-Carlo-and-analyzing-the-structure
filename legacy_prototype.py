@@ -1,3 +1,16 @@
+"""Archived 2024 Monte Carlo protein-structure prototype.
+
+This file is kept for historical reference. It is not a validated folding or
+molecular-dynamics method. See CODE_REVIEW.md before inspecting the functions.
+"""
+
+if __name__ == "__main__":
+    raise SystemExit(
+        "This is an archived prototype and is not safe for scientific use. "
+        "Read CODE_REVIEW.md or see the maintained teaching example at "
+        "https://github.com/sialock/protein-folding-."
+    )
+
 import mdtraj as md
 from Bio.PDB import PDBParser, PDBList
 import numpy as np
@@ -68,24 +81,3 @@ def parallel_monte_carlo_folding(structure, steps=1000, temperature=300, num_thr
         futures = [executor.submit(monte_carlo_folding, structure, steps, temperature) for _ in range(num_threads)]
         results = [future.result() for future in futures]
     return results
-
-# Download and load protein structure
-pdb_id = "1AKE"  # Example PDB ID
-file_path = download_pdb(pdb_id)
-structure = load_structure(file_path)
-
-# Analyze initial structure
-traj, topology = analyze_structure(file_path)
-
-# Run parallel Monte Carlo folding simulation
-folded_structures = parallel_monte_carlo_folding(structure, steps=1000, num_threads=4)
-
-# Save folded structures
-for i, folded_structure in enumerate(folded_structures):
-    output_file = f"folded_structure_{i}.pdb"
-    with open(output_file, "w") as f:
-        from Bio.PDB import PDBIO
-        io = PDBIO()
-        io.set_structure(folded_structure)
-        io.save(f)
-    print(f"Folded structure {i} saved to {output_file}")

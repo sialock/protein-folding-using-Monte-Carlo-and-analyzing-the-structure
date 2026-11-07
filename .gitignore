@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+pdb_files/
+folded_structure_*.pdb
+results/
